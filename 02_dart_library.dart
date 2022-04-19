@@ -1,10 +1,13 @@
 // 数字、集合、字符串(https://dart.cn/guides/libraries/library-tour#dartcore---numbers-collections-strings-and-more)
 // ignore: unused_import
+
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:core';
 import 'dart:math';
+import 'dart:async';
 
-void dartcore_numbers_numbers_collections_strings_and_more() {
+void dartcore_numbers_collections_strings_and_more() {
   print('#' * 40); // 打印40个#
   print('数字、集合、字符串等');
   assert(int.parse('42') == 42); // 将字符串转换为整数
@@ -247,9 +250,275 @@ void date_and_times() {
   assert(duration.inDays == 366); //y2k是闰年
 }
 
+// 工具类 （https://dart.cn/guides/libraries/library-tour#utility-classes）
+class Line implements Comparable<Line> {
+  //实现Comparable接口，通常用于排序
+  final int length;
+  const Line(this.length);
+  @override
+  int compareTo(Line other) => length - other.length;
+}
+
+class Person {
+  //用Object 类提供的静态方法，为对象内的多个属性生成单一的哈希值
+  final String firstName, lastName;
+  Person(this.firstName, this.lastName);
+  // Override hashCode using the static hashing methods
+  // provided by the `Object` class.
+  @override
+  int get hashCode => Object.hash(firstName, lastName);
+  @override
+  bool operator ==(dynamic other) {
+    return other is Person &&
+        other.firstName == this.firstName &&
+        other.lastName == this.lastName;
+  }
+}
+
+class Process {
+  //Represents a process
+  final String name;
+  Process(this.name);
+}
+
+class ProcessIterator implements Iterator<Process> {
+  //Represents an iterator over a collection of processes
+  final List<Process> _processes;
+  int _index = 0;
+  ProcessIterator(this._processes);
+  @override
+  Process get current => _processes[_index];
+  @override
+  bool moveNext() {
+    var hasNext = _index < _processes.length;
+    if (hasNext) _index++;
+    return hasNext;
+  }
+}
+
+class ProcessIterable extends IterableBase<Process> {
+  //Represents an iterable over a collection of processes
+  final List<Process> _processes;
+  ProcessIterable(this._processes);
+  @override
+  Iterator<Process> get iterator => ProcessIterator(_processes);
+}
+
+void utility_classes() {
+  print('\n');
+  print('#' * 40);
+  print('工具类');
+  print('#' * 40);
+  var short = const Line(1);
+  var long = const Line(100);
+  assert(short.compareTo(long) < 0);
+  var p1 = Person('Bob', 'Smith');
+  var p2 = Person('Bob', 'Smith');
+  var p3 = 'not a person';
+  assert(p1.hashCode == p2.hashCode); //两个对象的哈希值相同
+  assert(p1 != p3); //两个对象不相等
+}
+
+// 异常 (https://dart.cn/guides/libraries/library-tour#exceptions)
+class FooException implements Exception {
+  final String? message;
+  const FooException([this.message]);
+  @override
+  String toString() => message ?? 'FooException';
+}
+
+void testFooException() {
+  try {
+    throw FooException('测试异常');
+  } on FooException catch (e) {
+    print(e);
+  }
+}
+
+// 异步编程 (https://dart.cn/guides/libraries/library-tour#dartasync---asynchronous-programming)
+Future<Function> findEntryPoint() async {
+  await Future.delayed(Duration(seconds: 1));
+  return print;
+}
+
+// 以args为参数执行exec函数
+Future<int> runExecutable(exec, args) async {
+  exec(args);
+  return 0;
+}
+
+// 分析exit code，此处直接输出一下
+Future<void> flushThenExit(code) async {
+  print('exit with code $code');
+}
+
+// 使用then链式回调按顺序执行异步函数
+void runUsingFuture() {
+  findEntryPoint().then((entryPoint) {
+    return runExecutable(entryPoint, "using then to callback.");
+  }).then(flushThenExit);
+}
+
+// 使用await可以写出类似于同步的异步代码
+Future<void> runUsingAsyncAwait() async {
+  var entryPoint = await findEntryPoint();
+  try {
+    var exitCode = await runExecutable(entryPoint, 'using await to callback.');
+    await flushThenExit(exitCode);
+  } catch (e) {}
+}
+
+Future<void> throw_error_future(bool flag) async {
+  if (!flag) {
+    throw FooException('Exception in async function.');
+  } else {
+    print('No throwing Exception in async function.');
+  }
+}
+
+// catch异步函数中抛出的异常
+void catch_error(bool flag) {
+  throw_error_future(flag).then((_) {}).catchError((e) {
+    print(e);
+  });
+}
+
+void async_test() {
+  print('\n');
+  print('#' * 40);
+  print('异步Future测试');
+  print('#' * 40);
+  runUsingFuture();
+  runUsingAsyncAwait();
+  catch_error(false);
+}
+
+//数学和随机数(https://dart.cn/guides/libraries/library-tour#math-and-random)
+void math_and_random() {
+  print('\n');
+  print('#' * 40);
+  print('数学和随机数');
+  print('#' * 40);
+  assert(cos(pi) == -1.0); //cos(π)
+  var degrees = 30;
+  var radians = degrees * (pi / 180); //radians is π/6
+  var sinof30degrees = sin(radians); //sin(30°)=0.5
+  assert((sinof30degrees - 0.5).abs() < 0.01); //sin(30°)
+  assert(max(1, 1000) == 1000); //max(1, 1000)
+  assert(min(1, -1000) == -1000); //min(1, -1000)
+  //其他数学库中的常量
+  print(e); //2.718281828459045
+  print(pi); //3.141592653589793
+  print(sqrt2); //1.4142135623730951
+  var random = Random();
+  var value1 = random.nextDouble(); //在0.0和1.0之间，左闭右开区间
+  print('nextDouble: $value1');
+  var value2 = random.nextInt(10); //在0和10之间，左闭右开区间
+  print('nextInt: $value2');
+  var value3 = random.nextBool(); //true or false
+  print('nextBool: $value3');
+}
+
+//编解码(https://dart.cn/guides/libraries/library-tour#dartconvert---decoding-and-encoding-json-utf-8-and-more)
+void decoding_and_encoding_json_utf_8_and_more() {
+  print('\n');
+  print('#' * 40);
+  print('编解码');
+  print('#' * 40);
+  print('编解码json');
+  var jsonString = '''
+  [
+    {"score": 40},
+    {"score": 80}
+  ]
+'''; //在json中用双引号不是单引号
+  var scores =
+      jsonDecode(jsonString); //使用 jsonDecode() 解码 JSON 编码的字符串为 Dart 对象：
+  assert(scores is List); //true
+  var firstScore = scores[0];
+  assert(firstScore is Map); //true
+  assert(firstScore['score'] == 40); //true
+  scores = [
+    {'score': 40},
+    {'score': 80},
+    {'score': 100, 'overtime': true, 'special_guest': null}
+  ];
+  var jsonText = jsonEncode(scores); //使用 jsonEncode() 编码 Dart 对象为 JSON 字符串：
+  assert(jsonText ==
+      '[{"score":40},{"score":80},{"score":100,"overtime":true,"special_guest":null}]'); //true
+  print('编解码UTF-8');
+  List<int> utf8Bytes = [
+    0xc3,
+    0x8e,
+    0xc3,
+    0xb1,
+    0xc5,
+    0xa3,
+    0xc3,
+    0xa9,
+    0x72,
+    0xc3,
+    0xb1,
+    0xc3,
+    0xa5,
+    0xc5,
+    0xa3,
+    0xc3,
+    0xae,
+    0xc3,
+    0xb6,
+    0xc3,
+    0xb1,
+    0xc3,
+    0xa5,
+    0xc4,
+    0xbc,
+    0xc3,
+    0xae,
+    0xc5,
+    0xbe,
+    0xc3,
+    0xa5,
+    0xc5,
+    0xa3,
+    0xc3,
+    0xae,
+    0xe1,
+    0xbb,
+    0x9d,
+    0xc3,
+    0xb1
+  ];
+  var funnyWorld =
+      utf8.decode(utf8Bytes); //使用 utf8.decode() 解码 UTF8 编码的字符创为 Dart 字符串：
+  assert(funnyWorld == 'Îñţérñåţîöñåļîžåţîờñ'); //true
+  List<int> encoded = utf8.encode(
+      'Îñţérñåţîöñåļîžåţîờñ'); //使用 utf8.encode() 将 Dart 字符串编码为一个 UTF8 编码的字节流：
+  assert(encoded.length == utf8Bytes.length);
+  for (int i = 0; i < encoded.length; i++) {
+    assert(encoded[i] == utf8Bytes[i]);
+  }
+}
+//基于浏览器应用(https://dart.cn/guides/libraries/library-tour#darthtml)
+
 void main(List<String> args) {
-  dartcore_numbers_numbers_collections_strings_and_more();
+  //数字、集合、字符串测试
+  dartcore_numbers_collections_strings_and_more();
+  //集合测试
   collections();
+  //uris测试
   uris();
+  //日期和时间
   date_and_times();
+  //工具类
+  utility_classes();
+  //异常
+  testFooException();
+  //异步测试
+  async_test();
+  testFooException();
+  //数学和随机数
+  math_and_random();
+  //编解码
+  decoding_and_encoding_json_utf_8_and_more();
 }
